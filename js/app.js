@@ -13,20 +13,45 @@ function draw() {
   stroke(255);
   strokeWeight(3);
 
+  //Watch for window resizes!
+  let screenIsWide = windowWidth > 800;
+
   //Create base hexagon
   push();
   noFill();
-  let radius = (windowWidth < 800) ? (windowWidth * 0.3) : 240;
+  let radius = (screenIsWide) ? 240 : (windowWidth * 0.3);
   polygon(windowWidth/2, windowHeight/2, radius, 6);
   pop();
+  
+  //dynamically define hexagon points
+  // let firstLineX = windowWidth * 0.4;
+  // let firstLineY = windowHeight * 0.5;
 
-  //Create dynamic lines
-  line(480, 271.5, mouseX, mouseY);
-  line(836, 480, mouseX, mouseY);
-  line(480, 685, mouseX, mouseY);
+  let horizontalMidLine = radius * 2;
+  let verticalMidLine = horizontalMidLine * 0.87;
+
+  //geometry variables
+  let x0 = (windowWidth - horizontalMidLine) / 2
+  let x1 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine / 4);
+  let x2 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine * 0.75);
+  let x3 = (windowWidth + horizontalMidLine) / 2
+
+  let y0 = (windowHeight - verticalMidLine) / 2;
+  let y1 = windowHeight / 2;
+  let y2 = (windowHeight + verticalMidLine) / 2;
+
+  noFill();
+
+  line(x0, y1, mouseX, mouseY);
+  line(x1, y0, mouseX, mouseY);
+  line(x2, y0, mouseX, mouseY);
+  line(x3, y1, mouseX, mouseY);
+  line(x1, y2, mouseX, mouseY);
+  line(x2, y2, mouseX, mouseY);
   
 }
 
+//Polygon base function
 function polygon(x, y, radius, npoints) {
   let angle = TWO_PI / npoints;
   beginShape();
