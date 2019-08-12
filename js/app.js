@@ -45,19 +45,26 @@ function generateLines(radius) {
     const y2 = (windowHeight + verticalMidLine) / 2 - 1;
 
 
-    if(seed > 0.5) {
-      //Distribution form 1
-      line(x0, y1, mouseX, mouseY);
-      line(x2, y0, mouseX, mouseY);
-      line(x2, y2, mouseX, mouseY);
-    } else {
-      //Distribution form 2
-      line(x3, y1, mouseX, mouseY);
-      line(x1, y0, mouseX, mouseY);
-      line(x1, y2, mouseX, mouseY);
-    }
-
-
+    // if(seed > 0.5) {
+    //   //Distribution form 1
+    //   line(x0, y1, mouseX, mouseY);
+    //   line(x2, y0, mouseX, mouseY);
+    //   line(x2, y2, mouseX, mouseY);
+    // } else {
+    //   //Distribution form 2
+    //   fill(255, 255, 255, 0.5);
+    //   line(x3, y1, mouseX, mouseY);
+    //   line(x1, y0, mouseX, mouseY);
+    //   line(x1, y2, mouseX, mouseY);
+    // }
+    stroke(255, 255, 255, 75);
+    line(x0, y1, mouseX, mouseY);
+    line(x2, y0, mouseX, mouseY);
+    line(x2, y2, mouseX, mouseY);
+    stroke(255);
+    line(x3, y1, mouseX, mouseY);
+    line(x1, y0, mouseX, mouseY);
+    line(x1, y2, mouseX, mouseY);
 
 
 }
