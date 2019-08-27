@@ -1,177 +1,182 @@
-//Initialize Variables
-let numSegments,
-  x1 = [],
-  x2 = [],
-  x3 = [],
-  y1 = [],
-  y2 = [],
-  y3 = [],
-  angle = [],
-  segLength = 5,
-  targetX,
-  targetY,
-  screenIsWide,
-  radius,
-  horizontalMidline,
-  verticalMidLine;
+
+//Initialize
+let hexagon;
+let line1;
+let line2;
+let line3;
 
 
 function setup() {
-  //Setup canvas
   const canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent('canvas');
+  hexagon = new Polygon(windowWidth/2, windowHeight/2, 200, 6);
 
-  //Setup lines
-  screenIsWide = windowWidth > 800; //Watch for window resizes
-  radius = (screenIsWide) ? 200 : (windowWidth * 0.3); //Resize polygon radius based on width
-  numSegments = (radius * 2) / 6;
-  initializeArrays(numSegments);
-  setupLines(radius);
+  line1 = new ElasticLine(
+    hexagon.anchor1,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
+
+  line2 = new ElasticLine(
+    hexagon.anchor2,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
+
+  line3 = new ElasticLine(
+    hexagon.anchor3,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  hexagon = new Polygon(windowWidth/2, windowHeight/2, 200, 6);
 
-  //Re-setup lines
-  screenIsWide = windowWidth > 800; //Watch for window resizes
-  radius = (screenIsWide) ? 200 : (windowWidth * 0.3); //Resize polygon radius based on width
-  numSegments = (radius * 2) / 6;
-  initializeArrays(numSegments);
-  setupLines(radius);
+  line1 = new ElasticLine(
+    hexagon.anchor1,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
+
+  line2 = new ElasticLine(
+    hexagon.anchor2,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
+
+  line3 = new ElasticLine(
+    hexagon.anchor3,
+    {x: mouseX, y: mouseY },
+    Math.floor(hexagon.radius / 3),
+    5
+  );
 }
 
-
-//Get Drawing
 function draw() {
   background(0);
-  stroke(255);
-  strokeWeight(3);
-
-  //Polygon Setup
-  screenIsWide = windowWidth > 800; //Watch for window resizes
-  radius = (screenIsWide) ? 200 : (windowWidth * 0.3); //Resize polygon radius based on width
-  push();
   noFill();
-  polygon(windowWidth/2, windowHeight/2, radius, 6);
-  pop();
+  stroke(255);
+  strokeWeight(4);
+  hexagon.display();
+  line1.display();
+  line2.display();
+  line3.display();
+}
 
-  console.log("mouseX is " + mouseX > windowWidth / 2 - radius);
-  //Generate lines [NEW]
-  if (mouseX < windowWidth / 2 - radius || mouseX > windowWidth / 2 + radius || mouseY < windowHeight / 2 - radius || mouseY > windowHeight / 2 + radius) {
-    generateLines(radius);
-  } else {
-    drawLine(x1, y1);
-    drawLine(x2, y2);
-    drawLine(x3, y3);
+class ElasticLine {
+  constructor(anchorPoint, movingPoint, segmentAmount, segmentLength) {
+    this.anchorPoint = anchorPoint;
+    this.movingPoint = movingPoint;
+    this.segmentAmount = segmentAmount;
+    this.segmentLength = segmentLength;
+
+    //Computed variables
+    this.x = new Array(this.segmentAmount).fill(0);
+    this.y = new Array(this.segmentAmount).fill(0);
+    this.angle = new Array(this.segmentAmount).fill(0);
+    this.targetX;
+    this.targetY;
+  }
+
+  stretch() {
+    let dx = (this.anchorPoint.x >= this.movingPoint.x) ? this.anchorPoint.x - this.movingPoint.x : this.movingPoint.x - this.anchorPoint.x;
+    let dy = (this.anchorPoint.y >= this.movingPoint.y) ? this.anchorPoint.y - this.movingPoint.y : this.movingPoint.y - this.anchorPoint.y;
+    let hypotenuse = Math.sqrt((dx * dx) + (dy * dy));
+
+    this.segmentLength = hypotenuse / this.segmentAmount;
+  }
+
+  setAnchorPoints() {
+    this.x[this.x.length - 1] = this.anchorPoint.x;
+    this.y[this.y.length - 1] = this.anchorPoint.y;
+  }
+
+  setMovingPoints(x, y) {
+    this.movingPoint = {x: x, y: y};
+  }
+
+  positionSegment(a, b) {
+    this.x[b] = this.x[a] + cos(this.angle[a]) * this.segmentLength;
+    this.y[b] = this.y[a] + sin(this.angle[a]) * this.segmentLength;
+  }
+
+  reachSegment(i, xin, yin) {
+    const dx = xin - this.x[i];
+    const dy = yin - this.y[i];
+    this.angle[i] = atan2(dy, dx);
+    this.targetX = xin - cos(this.angle[i]) * this.segmentLength;
+    this.targetY = yin - sin(this.angle[i]) * this.segmentLength;
+  }
+
+  createSegment(x, y, angle) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    line(0, 0, this.segmentLength, 0);
+    pop();
+  }
+
+  display() {
+    this.setAnchorPoints();
+    this.setMovingPoints(mouseX, mouseY);
+    this.stretch();
+    this.reachSegment(0, this.movingPoint.x, this.movingPoint.y);
+    for(let i = 1; i < this.segmentAmount; i++) {
+      this.reachSegment(i, this.targetX, this.targetY);
+    }
+    for(let i = this.x.length - 1; i >= 1; i--) {
+      this.positionSegment(i, i-1);
+    }
+    for(let i = 0; i < this.x.length; i++) {
+      this.createSegment(this.x[i], this.y[i], this.angle[i]);
+    }
   }
 }
 
-function initializeArrays(numSegments) {
-  for (let i = 0; i < numSegments; i++) {
-    x1[i] = 0;
-    y1[i] = 0;
-    x2[i] = 0;
-    y2[i] = 0;
-    x3[i] = 0;
-    y3[i] = 0;
-    angle[i] = 0;
-  }  
-}
-
-function setupLines(radius) {
-  let horizontalMidLine = radius * 2;
-  let verticalMidLine = horizontalMidLine * 0.87;
-
-  //Coordinates
-  const coordinateX0 = (windowWidth - horizontalMidLine) / 2
-  const coordinateX1 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine / 4);
-  const coordinateX2 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine * 0.75);
-  const coordinateX3 = (windowWidth + horizontalMidLine) / 2
-
-  const coordinateY0 = (windowHeight - verticalMidLine) / 2 + 1;
-  const coordinateY1 = windowHeight / 2;
-  const coordinateY2 = (windowHeight + verticalMidLine) / 2 - 1;
-
-  x1[x1.length - 1] = coordinateX0; // Set base x-coordinate
-  y1[y1.length - 1] = coordinateY1; // Set base y-coordinate
-
-  x2[x2.length - 1] = coordinateX2; // Set base x-coordinate
-  y2[y2.length - 1] = coordinateY0; // Set base y-coordinate
-
-  x3[x3.length - 1] = coordinateX2; // Set base x-coordinate
-  y3[y3.length - 1] = coordinateY2; // Set base y-coordinate
-}
-
-function drawLine(x, y) {
-  reachSegment(0, mouseX, mouseY, x, y);
-
-  for (let i = 1; i < numSegments; i++) {
-    reachSegment(i, targetX, targetY, x, y);
+class Polygon {
+  constructor(x, y, radius, edges) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.edges = edges;
+    
+    this.angle = TWO_PI / this.edges;
+    this.midpoint = new Point(this.radius * 2, this.radius * 2 * 0.87);
+    this.anchor1 = new Point(
+      (windowWidth - this.midpoint.x) / 2, 
+      windowHeight / 2
+    );
+    this.anchor2 = new Point(
+      ((windowWidth - this.midpoint.x) / 2) + (this.midpoint.x * 0.75),
+      (windowHeight - this.midpoint.y) / 2 + 1
+    );
+    this.anchor3 = new Point(
+      ((windowWidth - this.midpoint.x) / 2) + (this.midpoint.x * 0.75),
+      (windowHeight + this.midpoint.y) / 2 - 1
+    );
   }
-  for (let j = x.length - 1; j >= 1; j--) {
-    positionSegment(j, j - 1, x, y);
-  }
-  for (let k = 0; k < x.length; k++) {
-    segment(x[k], y[k], angle[k], (k + 1) * 2);
+
+  display() {
+    beginShape();
+    for (let i = 0; i < TWO_PI; i += this.angle) {
+      let sx = this.x + cos(i) * this.radius;
+      let sy = this.y + sin(i) * this.radius;
+      vertex(sx, sy);
+    }
+    endShape(CLOSE);
   }
 }
 
-function positionSegment(a, b, x, y) {
-  x[b] = x[a] + cos(angle[a]) * segLength;
-  y[b] = y[a] + sin(angle[a]) * segLength;
-}
-
-function reachSegment(i, xin, yin, x, y) {
-  const dx = xin - x[i];
-  const dy = yin - y[i];
-  angle[i] = atan2(dy, dx);
-  targetX = xin - cos(angle[i]) * segLength;
-  targetY = yin - sin(angle[i]) * segLength;
-}
-
-function segment(x, y, a, sw) {
-  push();
-  translate(x, y);
-  rotate(a);
-  line(0, 0, segLength, 0);
-  pop();
-}
-
-/*** OLD CODE ***/
-//Line generation function
-function generateLines(radius) {
-    //Geometric variables
-    let horizontalMidLine = radius * 2;
-    let verticalMidLine = horizontalMidLine * 0.87;
-
-    //Coordinates
-    const x0 = (windowWidth - horizontalMidLine) / 2
-    const x1 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine / 4);
-    const x2 = ((windowWidth - horizontalMidLine) / 2) + (horizontalMidLine * 0.75);
-    const x3 = (windowWidth + horizontalMidLine) / 2
-  
-    const y0 = (windowHeight - verticalMidLine) / 2 + 1;
-    const y1 = windowHeight / 2;
-    const y2 = (windowHeight + verticalMidLine) / 2 - 1;
-
-    stroke(255);
-    line(x0, y1, mouseX, mouseY);
-    line(x2, y0, mouseX, mouseY);
-    line(x2, y2, mouseX, mouseY);
-    // stroke(255);
-    // line(x3, y1, mouseX, mouseY);
-    // line(x1, y0, mouseX, mouseY);
-    // line(x1, y2, mouseX, mouseY);
-}
-
-//Polygon base function
-function polygon(x, y, radius, npoints) {
-  let angle = TWO_PI / npoints;
-  beginShape();
-  for (let i=0; i<TWO_PI; i+= angle) {
-    let sx = x + cos(i) * radius;
-    let sy = y + sin(i) * radius;
-    vertex(sx, sy);
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
   }
-  endShape(CLOSE);
 }
